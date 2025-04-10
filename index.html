@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mini Roulette ⚡</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    body {
+      background: linear-gradient(135deg, #1f1c2c, #928dab);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 2rem;
+    }
+    input, select, button {
+      margin: 0.5rem;
+      padding: 0.6rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: none;
+    }
+    button {
+      background: #f90;
+      color: #000;
+      cursor: pointer;
+    }
+    #wheel {
+      font-size: 5rem;
+      margin: 2rem;
+      transition: transform 1.5s ease-out;
+    }
+    .history {
+      color: #eee;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+    #qr {
+      margin: 1rem;
+      background: #fff;
+      display: inline-block;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎰 Mini Roulette ⚡</h1>
+
+  <p>Bakiye: <span id="balance">0</span> sats</p>
+
+  <input type="text" id="lnaddress" placeholder="sen@speedwallet.me" />
+  <input type="number" id="amount" placeholder="Miktar (sats)" min="10" />
+  <button onclick="generateInvoice()">⚡ Sats Yükle</button>
+
+  <div id="qr"></div>
+
+  <input type="number" id="bet" placeholder="Bahis (sats)" min="1"/><br/>
+
+  <select id="number">
+    <option disabled selected value="">Sayı seç (1-10)</option>
+    <script>
+      for (let i = 1; i <= 10; i++) {
+        document.write(`<option value="${i}">${i}</option>`);
+      }
+    </script>
+  </select>
+
+  <select id="color">
+    <option disabled selected value="">Renk seç</option>
+    <option value="red">Kırmızı</option>
+    <option value="black">Siyah</option>
+  </select><br/>
+
+  <button onclick="play()">Oyna</button>
+
+  <div id="wheel">🎯</div>
+  <div id="result"></div>
+
+  <div class="history">
+    <h3>Oyun Geçmişi</h3>
+    <ul id="history"></ul>
+  </div>
+
+  <script>
+    let balance = 0;
+
+    function generateInvoice() {
+      const ln = document.getElementById('lnaddress').value.trim();
+      const amount = parseInt(document.getElementById('amount').value);
+      if (!ln || !amount || amount < 10) return alert("Geçerli LN adresi ve miktar gir.");
+
+      const qrDiv = document.getElementById('qr');
+      const lnurl = `lightning:${ln}`;
+      qrDiv.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(lnurl)}&size=200x200" /> 
+        <p>${lnurl}</p>
+        <p><strong>Ödeme yaptıktan sonra manuel olarak bakiyeyi arttırın.</strong></p>`;
+
+      balance += amount;
+      document.getElementById('balance').textContent = balance;
+    }
+
+    function play() {
+      const bet = parseInt(document.getElementById('bet').value);
+      const number = parseInt(document.getElementById('number').value);
+      const color = document.getElementById('color').value;
+
+      if (!bet || !number || !color) return alert('Tüm alanları doldurun.');
+      if (bet > balance) return alert('Yetersiz bakiye.');
+
+      balance -= bet;
+      document.getElementById('balance').textContent = balance;
+
+      const resultNumber = Math.floor(Math.random() * 10) + 1;
+      const resultColor = Math.random() < 0.5 ? 'red' : 'black';
+
+      const wheel = document.getElementById('wheel');
+      wheel.style.transform = 'rotate(0deg)';
+      setTimeout(() => {
+        wheel.style.transform = `rotate(${360 * 4 + Math.floor(Math.random() * 360)}deg)`;
+      }, 50);
+
+      document.getElementById('result').textContent = 'Çark dönüyor...';
+
+      setTimeout(() => {
+        let win = 0;
+        if (number === resultNumber) {
+          win = bet * 2;
+        } else if (color === resultColor) {
+          win = Math.floor(bet / 2);
+        }
+
+        balance += win;
+        document.getElementById('balance').textContent = balance;
+        document.getElementById('result').innerHTML = `Sonuç: ${resultNumber} - ${resultColor} → Kazanç: ${win} sats`;
+
+        const li = document.createElement('li');
+        li.textContent = `${resultNumber} - ${resultColor} → +${win} sats`;
+        document.getElementById('history').prepend(li);
+      }, 1700);
+    }
+  </script>
+</body>
+</html>
